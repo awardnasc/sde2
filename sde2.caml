@@ -1,0 +1,165 @@
+let bookprods = [["S"; "AB"]; ["S"; "BB"]; ["A"; "CC"]; ["A"; "AB"]; ["A"; "a"]; ["B"; "BB"];
+["B"; "CA"]; ["B"; "b"]; ["C"; "BA"]; ["C"; "AA"]; ["C"; "b"]]
+;;
+
+
+let bookstring = ["a"; "a"; "b"; "b"];;
+
+
+(**
+Prototype: add_to_cell(symbol,cell)
+Input(s): string symbol and possibly nonempty cell (string list)
+Returned Value: symbol added to cell, if not already there
+Side Effects: none
+Signature: ’a * ’a list -> ’a list = <fun>
+Notes: Used to add string to cell (list), w/o repeats
+May design and implement as polymorphic
+*)
+let add_to_cell (symbol, cell) =
+  if(List.mem symbol cell)
+    then cell
+  else
+    symbol :: cell
+;;
+
+
+(**
+Prototype: form_row1_cell(element,productions)
+Input(s): string to parse, production list
+Returned Value: cell (string list) containing LHS of production
+capable of producing element
+Side Effects: none
+Signature: ’a * ’a list list -> ’a list = <fun>
+*)
+(* Search for element in productions list list then return head, .hd *)
+let rec form_row1_cell(element, productions) =
+  if (List.length(productions)) = 0
+    then []
+  else
+      if (List.mem element (List.hd(productions)))
+        then (List.hd(List.hd(productions)) :: form_row1_cell(element, List.tl(productions)))
+      else
+        form_row1_cell(element, List.tl(productions))
+;;
+
+
+(**
+Prototype: form_row1(string,productions)
+Input(s): input string to be parsed, as a string list
+productions in CNF
+Returned Value: first row of CYK table
+Side Effects: none
+Signature: ’a list * ’a list list -> ’a list list = <fun>
+Notes: Forms row 1 of CYK table as a special case.
+*)
+let rec form_row1(string, productions) =
+  if (List.length(string)) = 0
+    then []
+  else
+      form_row1_cell(List.hd(string), productions) :: form_row1(List.tl(string),productions)
+;;
+
+
+(**
+Prototype: decomp_aux(m, n)
+Inputs: integer (string length) twice
+Returned Value: list of decomposition lists, each of form [j;k]
+Side Effects: none
+Signature:  int * int -> int list list = <fun>
+Notes: This is just a helper function for decomposition(n) to
+help keep track of the increment.
+*)
+let rec decomp_aux(m, n) =
+  if( n = 1 )
+    then []
+  else [m+1; n-1] :: decomp_aux(m+1, n-1)
+;;
+
+
+(**
+Prototype: decompositions (n)
+Inputs: integer (string length)
+Returned Value: list of decomposition lists, each of form [j;k]
+Side Effects: none
+Signature: int -> int list list = <fun>
+Notes: Notation [j;k] in this function means a list of length j
+followed by a list of length k
+i.e., the ’j+k’ decomposition.
+This is not cell j,k in the CYK table.
+*)
+let decompositions(n) =
+  decomp_aux(0, n)
+;;
+
+let rec find_targets_in_all_decompositions_aux(i, decomps) =
+  if (List.length(decomps)) = 0
+    then []
+  else
+    [[i; (List.hd(List.hd(decomps)))];
+    [i + List.hd(List.hd(decomps)); List.hd(List.tl(List.hd(decomps)))]]
+    :: find_targets_in_all_decompositions_aux(i, List.tl(decomps))
+;;
+
+
+(**
+Prototype: find_targets_in_all_decompositions(i,j)
+Inputs: cell indices for cell t_ij in the CYK table
+Returned Value: list of list of all cell pair indices to be tested
+Side Effects: none
+Signature: int * int -> int list list list = <fun>
+Notes: Used to find cell pairs in binary decomposition of the string.
+*)
+let find_targets_in_all_decompositions(i, j) =
+  find_targets_in_all_decompositions_aux(i, decomp_aux(0, j))
+;;
+
+let rec cell_products_aux(cellList) =
+  if(List.length(List.tl(cellList))) = 0
+    then []
+  else (List.hd(List.nth cellList 0) ^ (List.hd(List.nth cellList 1)))
+  :: cell_products_aux([(List.hd(cellList)); (List.tl(List.hd(List.tl(cellList))))])
+;;
+
+
+(**
+Prototype: cell_products([cell1;cell2])
+Inputs: list of 2 cell lists (cell pairs)
+Returned Value: ’product’ of the 2 cells for CYK table
+Side Effects: none
+Signature: string list list -> string list = <fun>
+Notes: See examples
+*)
+let rec cell_products(cellList) =
+  if(List.length(List.hd(cellList))) = 0
+    then []
+
+  else cell_products_aux(cellList)
+  @ cell_products([List.tl(List.hd(cellList)); List.hd(List.tl(cellList))])
+;;
+
+
+(* Take the targets and convert them to the terminals stored in ctable using .nth *)
+let rec relate_nums_to_letters(targets, ctable)=
+
+;;
+
+
+(* Finding the targets of a specific cell *)
+let rec form_cyk_table_aux(prods, ctable, len_ctable, row)=
+  if(len_ctable != 1)
+    then relate_nums_to_letters((find_targets_in_all_decompositions(len_ctable, row)), ctable)
+  else
+;;
+
+
+(**
+Prototype: form_cyk_table(prods,ctable)
+Inputs: productions, current table
+Returned Value: the CYK parse table
+Side Effects: none
+Signature: string list list * string list list list -> string list list list = <fun>
+Notes: This function is started with ctable = [row1].
+*)
+let form_cyk_table(prods, ctable)=
+  form_cyk_table_aux(prods, ctable, List.length(ctable), 2)
+;;
